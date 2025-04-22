@@ -1,0 +1,25 @@
+---
+title: "Essay on Shinylive"
+---
+
+# What is Shinylive?
+
+Shinylive allows you to publish Shiny apps as serverless websites, meaning no backend is required. All R code is executed in the browser using WebAssembly.
+
+## Pros
+- No hosting/server costs
+- Runs fully in the browser
+- Easy to share (works with GitHub Pages, Quarto Pub)
+
+## Cons
+- Not ideal for apps with large data
+- Packages using system calls (e.g., `curl`) won’t work
+- Sensitive data cannot be protected in-browser
+
+For AO1, this could be used if our app stays lightweight and doesn't require database calls or secure data storage.
+
+
+-   Limited support for R packages that depend on system-level resources (e.g., `curl`)
+-   Slower initial load time compared to server-backed apps
+
+Overall, Shinylive is perfect for publicly sharing dashboards or apps when privacy and performance constraints are low.

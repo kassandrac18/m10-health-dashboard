@@ -1,0 +1,89 @@
+---
+title: "AO1: Consumer Patronage Behavior Dashboard"
+editor: visual
+runtime: shiny
+---
+
+```{r setup}
+library(shiny)
+library(shinydashboard)
+library(dplyr)
+library(ggplot2)
+library(DT)
+library(readr)
+library(tidyr)
+library(readr)
+data <- read_csv("covid-clean-initial.csv")
+
+
+
+# Rename for clarity and standardization
+data <- data %>%
+  rename(
+    age = age.x,
+    gender = sex
+  ) %>%
+  mutate(
+    gender = as.factor(gender),
+    age = as.numeric(age)
+  ) %>%
+  filter(!is.na(age), !is.na(gender))
+```
+
+```{r ui}
+ui <- dashboardPage(
+  dashboardHeader(title = "Consumer Patronage - AO1"),
+  dashboardSidebar(
+    sliderInput("ageInput", "Select Age Range:",
+                min = min(data$age, na.rm = TRUE),
+                max = max(data$age, na.rm = TRUE),
+                value = c(25, 50)),
+    selectInput("genderInput", "Select Gender:",
+                choices = unique(data$gender),
+                selected = "Female",
+                multiple = FALSE)
+  ),
+  dashboardBody(
+    fluidRow(
+      box(title = "Visit Frequency (Avg)", status = "primary", solidHeader = TRUE, width = 6,
+          plotOutput("visitPlot")),
+      box(title = "Filtered Table", status = "info", solidHeader = TRUE, width = 6,
+          DTOutput("dataTable"))
+    )
+  )
+)
+```
+
+```{r server}
+server <- function(input, output) {
+  filtered_data <- reactive({
+    data %>%
+      filter(age >= input$ageInput[1],
+             age <= input$ageInput[2],
+             gender == input$genderInput)
+  })
+
+  output$visitPlot <- renderPlot({
+    filtered_data() %>%
+      summarise(
+        Behavior1 = mean(prevt_behavior_1, na.rm = TRUE),
+        Behavior2 = mean(prevt_behavior_2, na.rm = TRUE),
+        Behavior3 = mean(prevt_behavior_3, na.rm = TRUE)
+      ) %>%
+      pivot_longer(everything(), names_to = "Behavior", values_to = "Average") %>%
+      ggplot(aes(x = Behavior, y = Average, fill = Behavior)) +
+      geom_bar(stat = "identity") +
+      theme_minimal() +
+      labs(x = "Behavior Type", y = "Average Score")
+  })
+
+  output$dataTable <- renderDT({
+    filtered_data() %>%
+      select(age, gender, prevt_behavior_1, prevt_behavior_2, prevt_behavior_3)
+  })
+}
+```
+
+```{r shinyApp}
+shinyApp(ui, server)
+```

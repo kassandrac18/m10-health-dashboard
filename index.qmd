@@ -1,0 +1,24 @@
+---
+title: "Home"
+page-layout: full
+---
+
+# 👋 Welcome
+
+![Kassandra Cisneros](images/IMG_9348.JPG){fig-align="left" width="90"}
+
+## 🎯 Career Aspiration
+
+I aspire to work in digital marketing, blending creativity and data to tell compelling brand stories. My goal is to use storytelling and strategy to drive impact in health, lifestyle, or media industries.
+
+## 🧠 Skills
+
+-   R, SQL, Tableau
+-   Data Visualization & Analysis
+-   Video Editing & Post-production
+-   Marketing Strategy
+-   SEO & Content Optimization
+
+## 🎓 Education
+
+-   MS in Digital Marketing, Cal Poly Pomona

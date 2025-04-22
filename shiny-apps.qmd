@@ -1,0 +1,15 @@
+---
+title: "Essay on Shiny Apps"
+---
+
+# Understanding Shiny Apps
+
+Shiny is an R package that allows you to build interactive web applications directly from R code. These apps can combine UI components and server logic, creating dashboards that respond to user inputs in real-time. In the AO1 dashboard, we used Shiny to filter patronage behavior by age and gender.
+
+Shiny enables:
+- Real-time data visualization
+- Dynamic filtering and plotting
+- User engagement without complex web dev skills
+
+It’s especially useful in academic, healthcare, and marketing domains for presenting survey or behavioral data interactively.
+
