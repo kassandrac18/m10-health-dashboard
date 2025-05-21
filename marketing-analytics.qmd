@@ -1,0 +1,27 @@
+---
+title: "Marketing Insights"
+listing: 
+  contents: listings
+  type: grid
+  categories: true
+  sort: 
+    - "index desc"
+---
+
+## What You’ll Find
+
+- **Social Media Analytics for Norco College**  
+  Created, disseminated, and evaluated content across platforms including social media, email, websites, and apps. Used data to assess engagement trends and refine future campaigns.
+
+- **YouTube SEO Strategy for Trauma Resource Institute**  
+  Helped increase domain authority and traffic through off-page SEO strategies across YouTube, LinkedIn, Instagram, and Facebook. Supported brand awareness goals through targeted content efforts.
+
+- **Sports Content Production (Freelance)**  
+  Designed and scheduled athlete-centered social media content around audience behavior. Edited videos and managed posts based on active user engagement windows to maximize reach.
+
+- **Brand Activation & Market Insights (DLS LLC)**  
+  Supported marketing through website content, branding, and SEO. Promoted products during special events and collaborated on logo and campaign design.
+
+- **Community Outreach Analysis (BELLKO)**  
+  Conducted grassroots marketing and gathered consumer insights during field promotions to inform new product development and strategic outreach efforts.
+---
