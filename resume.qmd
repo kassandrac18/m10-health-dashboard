@@ -1,0 +1,51 @@
+---
+title: "Résumé"
+---
+
+```{r knit-resume, echo=FALSE, message=FALSE}
+rmarkdown::render(
+  "resume/Resume.Rmd",
+  output_format = "pdf_document",
+  output_file   = "Resume.pdf",
+  output_dir    = "resume",
+  quiet         = TRUE
+)
+```
+
+You can view a PDF version of my résumé [here](resume/kasscv.pdf).
+
+# Professional Summary
+
+Creative and detail-oriented Marketing and Digital Media Professional with a strong foundation in content creation, photography, analytics, and social media strategy. Proven success in digital marketing campaigns, brand management, and event coverage.
+
+# Technical Skills
+
+-   **Tools & Platforms:** Hootsuite, Adobe Creative Suite (Photoshop, Lightroom), Canva, Meta Business Suite, Later\
+-   **Photography & Videography:** DSLR camera operation, editing, post-production\
+-   **Social Media:** Instagram, X (Twitter), Facebook, YouTube, TikTok\
+-   **Web & Analytics:** Google Analytics, SEO, CMS platforms
+
+# Education
+
+| Degree                                      | Year      | College / Department | Institution                                    |
+|-------------------|---------------|---------------|-----------------------|
+| M.S. in Digital Marketing                   | 2024–2025 | College of Business  | California State Polytechnic University Pomona |
+| B.A. in Business Administration – Marketing | 2022–2023 | College of Business  | California State University Fullerton          |
+
+# Work Experience
+
+### Sports Publicist & Digital Media Manager – Norco College
+
+*Aug 2023 – Present*\
+- Lead creative direction for all Athletics social media platforms\
+- Produce and publish content including photos, scores, athlete features, and game-day visuals\
+- Collaborate with coaches, athletes, and administration to highlight events and achievements\
+- Increased social media engagement through consistent branding and storytelling
+
+### Freelance Sports Photographer & Content Creator – Inland Empire
+
+*2023 – Present*\
+- Capture live-action photos for college and high school sports\
+- Deliver high-quality imagery to athletes and athletic departments\
+- Build relationships with clients through consistent and professional visual storytelling\
+- Post-process and organize content for promotional and archival use
