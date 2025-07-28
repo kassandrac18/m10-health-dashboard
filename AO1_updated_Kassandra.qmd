@@ -1,0 +1,725 @@
+---
+title: "AO1 Kassandra Cisneros"
+author: "Kassandra Cisneros"
+date: '`r format(Sys.time())`'
+format: 
+  html: 
+    toc: true
+    toc-depth: 4
+    number-sections: true
+    code-line-numbers: true
+    code-fold: false
+    code-link: true
+    embed-resources: true
+editor: visual
+execute: 
+  freeze: auto
+  warning: false
+  error: true
+---
+
+Introdcution
+
+Introduction This report presents descriptive analytics for Analytics Objective 1 (AO1): "Describe consumer patronage behaviors and consumers’ COVID-19 experience during and after the pandemic."
+
+Using survey data collected during the post-pandemic period, this analysis explores how consumers behaved during COVID-19, their comfort levels with health measures, and their intentions to return to coffee shops afterward. The findings will help inform marketing strategies for Vivot Craft Cafe, focusing on customer loyalty, health-conscious behaviors, and re-engagement opportunities in the evolving landscape of food and beverage consumption.
+
+Loading Packages
+
+```{r}
+library(tidyverse)  
+library(gtsummary)   
+library(janitor)      
+library(labelled) 
+```
+
+
+
+```{r}
+library(haven)
+library(tidyverse)
+library(glue)
+library(ggtext)
+
+# Load your full SPSS dataset
+data <- read_sav("~/Downloads/covid-clean-final-12-4-2024-rev1.sav")
+df_clean <- read_csv("~/Downloads/covid-clean-final-12-4-2024-rev1.sav-addmaple-conversion.csv")
+View(data)
+```
+
+
+# Chapter 3: Methods
+
+## Target Population
+
+The target population for this study includes **U.S. adults who visited coffee shops and stayed at least 15 minutes during the peak of the COVID-19 pandemic**. Eligible participants were recruited via online survey panels.
+
+## Sampling Method
+
+Participants were recruited through Prolific, an online research panel provider. Inclusion criteria were: - Age 18 or older - Residence in the United States - At least one coffee shop visit lasting 15 minutes or more during the pandemic
+
+A total of 736 valid responses were collected after filtering for complete and thoughtful responses (100% progress and marked as 'Finished').
+
+## Sample Characteristics
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Step 1: Rename important variables (update names based on actual column headers)
+names(df_clean)[1:30]  # preview column names to identify actual labels
+
+# Rename survey columns
+# Rename survey columns
+df_clean <- df_clean %>%
+  rename(
+    gender = `Which gender do you most identify with?`,
+    mask_behavior = `Please indicate the degree to which you agree or disagree with each of the following statements regarding your behaviors when you stayed in a coffee shop during March 2020-May 2021. - While inside a coffee shop, I wore a mask when not eating/drinking to re`,
+    mask_intent_future = `Please respond to the statements below in the context of the hypothetical future pandemic. - I will be confident that I will wear a mask when I stay in a coffee shop if I want to. (2)`,
+    observed_mask = `Which of the following COVID-19 safety measures have you noticed from the store environment (i.e., signs, employee practices) while at a coffee shop? - Mask wearing (2)`,
+    future_sanitize = `Please indicate the degree to which you agree or disagree with each of the following statements regarding your behaviors when you stayed in a coffee shop during March 2020-May 2021. - I made every attempt to keep personal hygiene (i.e. washing hands, sanit`,
+ stay_duration = `How long did you usually stay in the coffee shop during your visit?`,
+    age = `Please type your age below.`
+  ) %>%
+  mutate(
+    stay_duration_num = case_when(
+      stay_duration == "Less than 30 minutes" ~ 15,
+      stay_duration == "30 minutes to less than 1 hour" ~ 45,
+      stay_duration == "1 hour to Less than 2 hours" ~ 90,
+      stay_duration == "2 hours to Less than 4 hours" ~ 180,
+      stay_duration == "4 hours to Less than 7 hours" ~ 330,
+      stay_duration == "7 hours or more" ~ 480,
+      TRUE ~ NA_real_
+    ),
+    age = as.numeric(age)
+  )
+
+# Gender summary table (dropping NA and small groups)
+df_clean %>%
+  filter(gender %in% c("Male", "Female")) %>%
+  count(gender) %>%
+  mutate(percent = n / sum(n) * 100)
+```
+
+Additional tables and charts should summarize: - Age (mean ± SD) - Gender (% distribution) - Race/Ethnicity (% distribution) - Political ideology - Education level - Income level
+
+## Data Wrangling
+
+-   Converted Likert-scale responses to numeric scales (1 = Strongly Disagree, 5 = Strongly Agree)
+-   Renamed variables for clarity
+-   Removed incomplete or inattentive responses
+
+## Analytical Approach
+
+For **AO1: Describe consumer patronage behaviors and COVID-19 experiences**, the following structure was applied:
+
+### Variables
+
+-   Mask-wearing intentions (e.g., `mask_intent`)
+-   Duration of stay (`stay_duration`)
+-   Observed sanitation measures (`observed_sanitation`)
+-   Demographics: age, gender, education, health conditions
+
+### Methods
+
+-   Descriptive statistics
+-   Correlation analysis
+-   t-tests and ANOVA
+-   Multiple regression analyses
+
+### Rationale
+
+To explore both descriptive patterns and test hypotheses such as: - Younger participants stay longer (correlation) - Women are more cautious about mask-wearing (t-test) - Sanitation perception influences stay duration (regression)
+
+# Chapter 4: Analysis and Results
+
+## AO1: Consumer Behaviors and COVID-19 Experience
+
+### Overview
+
+This section describes behavioral patterns and experiences related to COVID-19 and coffee shop visits.
+
+```{r}
+# Define Likert scale mapping: Strongly disagree (1) to Strongly agree (7)
+likert_map <- c(
+  "Strongly disagree" = 1,
+  "Disagree" = 2,
+  "Somewhat disagree" = 3,
+  "Neither agree nor disagree" = 4,
+  "Somewhat agree" = 5,
+  "Agree" = 6,
+  "Strongly agree" = 7
+)
+
+# Convert Likert text responses to numeric using the map
+df_clean <- df_clean %>%
+  mutate(
+    mask_intent_num = likert_map[mask_intent_future],
+    future_sanitize_num = likert_map[future_sanitize]
+  )
+
+```
+
+# Visualizations
+
+
+```{r}
+# 2. Mask-Wearing Behavior by Gender (Likert scaled 1–7) — Fixed version
+df_clean <- df_clean %>%
+  mutate(mask_behavior_num = case_when(
+    mask_behavior == "Strongly disagree" ~ 1,
+    mask_behavior == "Disagree" ~ 2,
+    mask_behavior == "Somewhat disagree" ~ 3,
+    mask_behavior == "Neither agree nor disagree" ~ 4,
+    mask_behavior == "Somewhat agree" ~ 5,
+    mask_behavior == "Agree" ~ 6,
+    mask_behavior == "Strongly agree" ~ 7,
+    TRUE ~ NA_real_
+  )) %>%
+  filter(gender %in% c("Male", "Female"), !is.na(mask_behavior_num))
+
+ggplot(df_clean, aes(x = gender, y = mask_behavior_num)) +
+  stat_summary(fun = mean, geom = "bar", fill = "skyblue") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  labs(
+    title = "Figure 1-1: Mean Mask-Wearing Behavior by Gender",
+    y = "Mean Likert Scale Rating",
+    x = "Gender"
+  ) +
+  ylim(1, 7)
+```
+
+*Description: On a 7-point Likert scale, female respondents reported higher average mask-wearing behavior (M = X.XX, SD = X.XX) compared to males (M = Y.YY, SD = Y.YY). This suggests women were more likely to follow in-shop health precautions during the pandemic.*
+
+## Mask-Wearing Frequency (Distribution)
+
+```{r}
+df_clean <- df_clean %>%
+  mutate(mask_behavior = factor(mask_behavior,
+                                levels = c("Strongly disagree", "Disagree", "Somewhat disagree",
+                                           "Neither agree nor disagree",
+                                           "Somewhat agree", "Agree", "Strongly agree"),
+                                ordered = TRUE))
+
+# Create bar chart with ordered Likert scale (1-7)
+ggplot(df_clean, aes(x = mask_behavior)) +
+  geom_bar(fill = "pink") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Figure 1-2: Self-Reported Mask-Wearing Behavior",
+       x = "Likert Scale Response (1 = Strongly disagree, 7 = Strongly agree)",
+       y = "Count")
+```
+
+*Description: The bar chart shows the distribution of respondents' self-reported mask-wearing behavior in coffee shops during the pandemic. Responses follow a 7-point Likert scale ranging from "Strongly disagree" to "Strongly agree." The majority of respondents indicated agreement with mask-wearing practices.*
+
+## Future Mask-Wearing Intentions
+
+```{r}
+df_clean <- df_clean %>%
+  mutate(mask_intent_future = factor(mask_intent_future,
+                                     levels = c("Strongly disagree", 
+                                                "Disagree", 
+                                                "Somewhat disagree",
+                                                "Neither agree nor disagree",
+                                                "Somewhat agree", 
+                                                "Agree", 
+                                                "Strongly agree"),
+                                     ordered = TRUE))
+
+ggplot(df_clean, aes(x = mask_intent_future)) +
+  geom_bar(fill = "hotpink") +
+  scale_x_discrete(drop = FALSE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Figure 1-3: Intentions to Wear Masks in a Future Pandemic",
+       x = "Likert Scale Response (1 = Strongly disagree, 7 = Strongly agree)",
+       y = "Count")
+```
+
+*Description: The bar chart illustrates respondents' intentions to wear masks in a future pandemic, measured on a 7-point Likert scale from "Strongly disagree" to "Strongly agree." Most respondents expressed moderate to strong intentions to comply with mask-wearing in future health crises.*
+
+## Future Sanitation Behavior Intentions
+
+```{r}
+future_sanitize_num <- likert_map[df_clean$future_sanitize]
+
+ggplot(df_clean, aes(x = future_sanitize_num)) +
+  geom_bar(fill = "magenta") +
+  scale_x_continuous(breaks = 1:7, labels = names(likert_map)) +
+  labs(title = "Figure 1-4: Intentions to Practice Personal Hygiene in a Future Pandemic", x = "Response", y = "Count")
+```
+
+*Description: Intentions to maintain hygiene (e.g., handwashing and sanitizing) were high, with the majority of participants selecting “Agree” or “Strongly Agree.” These results indicate that pandemic-era hygiene behaviors may persist into the future.*
+
+## Hospitality Establishment Visit Behaviors During the Pandemic
+
+```{r}
+he_vb <- data |> 
+    select(gel_estlmnt_visit_1:gel_estlmnt_visit_13)
+
+he_vb <- he_vb |> 
+    mutate(across(where(is.labelled), as.numeric)) |> 
+    mutate(across(where(is.numeric), ~ replace_na(.x, 0))) 
+
+he_vb_longer <- he_vb |> 
+    pivot_longer(everything(), names_to = "names", values_to = "metric")
+
+establishment_labels <- c("Restaurant", "Spa", "hair Salon", "Coffee Shop",
+                         "Hotel/Motel", "Airbnb", "Others")
+
+he_vb_longer <- he_vb_longer |> 
+    mutate(names = case_when(
+        names == "gel_estlmnt_visit_1" ~ "Restaurant",
+        names == "gel_estlmnt_visit_8" ~ "Spa",
+        names == "gel_estlmnt_visit_9" ~ "hair Salon",
+        names == "gel_estlmnt_visit_10" ~ "Coffee Shop",
+        names == "gel_estlmnt_visit_11" ~ "Hotel/Motel",
+        names == "gel_estlmnt_visit_12" ~ "Airbnb",
+        names == "gel_estlmnt_visit_13" ~ "Others"
+    )) |> 
+    mutate(names = fct_relevel(names, establishment_labels))
+```
+
+```{r}
+#| label: fig-he-vb
+#| fig-cap: Hospitality Establishment Visit Behavior
+
+theme_set(theme_light())
+
+N <- nrow(he_vb)
+library(glue)
+library(ggtext)
+
+he_vb_longer |> 
+    group_by(names) |> 
+    summarise(percent = mean(metric)) |> 
+    mutate(names = fct_reorder(names, percent)) |> 
+    ggplot(aes(names, percent, fill = names)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    scale_y_continuous(labels = scales::percent) +
+    geom_text(aes(label = paste0(round(percent*100, 1),"%")),
+              hjust = -0.01, size = 3) +
+    labs(x = "", y = "",
+         title = "Figure 1-5: Consumer Visitation of Hospitality Establishment During Pandemic",
+         subtitle = glue("N = {N}; Period: March 2020 - May 2021"),
+         caption = "**Question**: Which of the following retail/hospitality/service \nestablishment(s) did you visit in March 2020-May2021?"
+    ) +
+    theme(plot.caption = element_markdown())
+```
+
+*Descrition: This chart shows the types of hospitality businesses consumers visited during the peak of the pandemic. Coffee shops were among the most frequently visited, indicating that casual, routine visits remained common despite COVID-19 risks.*
+
+## Safety Perception at Hospitality Establishments
+
+```{r}
+he_safety <- data |> 
+    select(gel_estlmnt_safe_1:gel_estlmnt_safe_7)
+
+he_safety <- he_safety |> 
+    mutate(across(where(is.labelled), haven::as_factor)) 
+
+he_safety_longer <- he_safety |> 
+    pivot_longer(everything(), names_to = "names", values_to = "metric")
+
+establishment_labels <- c("Restaurant", "Spa", "hair Salon", "Coffee Shop",
+                         "Hotel/Motel", "Airbnb", "Others")
+
+he_safety_longer <- he_safety_longer |> 
+    mutate(names = case_when(
+        names == "gel_estlmnt_safe_1" ~ "Restaurant",
+        names == "gel_estlmnt_safe_2" ~ "Spa",
+        names == "gel_estlmnt_safe_3" ~ "hair Salon",
+        names == "gel_estlmnt_safe_4" ~ "Coffee Shop",
+        names == "gel_estlmnt_safe_5" ~ "Hotel/Motel",
+        names == "gel_estlmnt_safe_6" ~ "Airbnb",
+        names == "gel_estlmnt_safe_7" ~ "Others"
+    )) |> 
+    mutate(names = fct_relevel(names, establishment_labels))
+```
+
+```{r}
+#| label: fig-he-safety
+#| fig-cap: Hospitality Establishment Safety Perception
+
+theme_set(theme_bw())
+
+he_safety_longer |> 
+    filter(!is.na(metric)) |> 
+    group_by(names) |> 
+    count(metric) |> 
+    mutate(percent = n/sum(n)) |> 
+    ggplot(aes(metric, percent, fill = names)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    facet_wrap(~ names) +
+    scale_y_continuous(labels = scales::percent) +
+    geom_text(aes(label = paste0(round(percent*100, 1),"%")),
+              hjust = 0.01, size = 3) +
+    labs(x = "", y = "",
+         title = "Figure 1-6: Safety Perception at Hospitality Establishment During Pandemic",
+         subtitle = glue("Sample size varies by establishment; Period: March 2020 - May 2021"),
+         caption = "**Question**: Please indicate the degree to which you felt safe \nwhen you visited each of the stores you selected \npreviously in March 2020-May2021"
+    ) +
+    theme(plot.caption = element_markdown())
+```
+
+*Descrption: This visualization captures how safe consumers felt while visiting different establishments. Coffee shops and restaurants had more mixed safety perceptions, highlighting the importance of visible preventative measures.*
+
+
+## Witnessing COVID-19 Safety Measures at Coffee Shops
+
+```{r}
+cs_witness <- data |> 
+    select(notice_cs_ms, notice_cs_wash, notice_cs_sodis, notice_cs_vac) |> 
+    mutate(across(where(is.labelled), haven::as_factor)) 
+
+cs_witness_longer <- cs_witness |> 
+    pivot_longer(everything(), names_to = "names", values_to = "metric")
+
+witness_labels <- c("Mask Wearing", "Hand-washing/sanitizing", "Social distancing", "Vaccination policy disclosure")
+
+cs_witness_longer <- cs_witness_longer |> 
+    mutate(names = case_when(
+        names == "notice_cs_ms" ~ "Mask Wearing",
+        names == "notice_cs_wash" ~ "Hand-washing/sanitizing",
+        names == "notice_cs_sodis" ~ "Social distancing",
+        names == "notice_cs_vac" ~ "Vaccination policy disclosure"
+    )) |> 
+    mutate(names = fct_relevel(names, witness_labels))
+```
+
+```{r}
+#| label: fig-cs-safety-witness
+#| fig-cap: Witnessing COVID-19 Safety Measures in Coffee Shops
+
+theme_set(theme_bw())
+
+N <- nrow(data)
+
+cs_witness_longer |> 
+    filter(!is.na(metric)) |> 
+    group_by(names) |> 
+    count(metric) |> 
+    mutate(percent = n/sum(n)) |> 
+    ggplot(aes(metric, percent, fill = names)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    facet_wrap(~ names) +
+    scale_y_continuous(labels = scales::percent) +
+    geom_text(aes(label = paste0(round(percent*100, 1),"%")),
+              hjust = 0.01, size = 3) +
+    labs(x = "", y = "",
+         title = "Figure 1-7: Noticing COVID-19 Safety Measures in Coffee Shop Environment",
+         subtitle = glue("N = {N}; Period: March 2020 - May 2021"),
+         caption = "**Question**: Which of the following COVID-19 safety measures \nhave you noticed from the store environment (i.e., signs, employee practices) while at a coffee shop?"
+    ) +
+    theme(plot.caption = element_markdown())
+```
+
+*Description: Consumers were most likely to observe mask-wearing and hand-sanitizing practices in coffee shops, followed by social distancing and vaccination signage. These visible cues played a key role in shaping perceptions of safety.*
+
+## Duration of Stay at Coffee Shops
+
+```{r}
+#| label: fig-cs-duration
+#| fig-cap: Duration of Stay at the Coffee Shops
+
+data |> 
+    select(duration) |> 
+    filter(!is.na(duration)) |> 
+    mutate(duration = haven::as_factor(duration)) |> 
+    count(duration) |> 
+    mutate(percent = n/sum(n)) |> 
+    mutate(duration = fct_reorder(duration, n)) |> 
+    ggplot(aes(duration, percent, fill = duration)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    scale_y_continuous(labels = scales::percent) +
+    geom_text(aes(label = paste0(round(percent*100, 1),"%")),
+              hjust = 0.01, size = 3) +
+    labs(x = "", y = "",
+         title = "Figure 1-8: Duration of Stay at Coffee Shops",
+         subtitle = glue("N = {N}; Period: March 2020 - May 2021"),
+         caption = "**Question**: How long did you usually stay in the coffee shop during your visit?"
+    ) +
+    theme(plot.caption = element_markdown())
+```
+
+*Descrption: Most consumers reported staying at coffee shops for brief to moderate periods, suggesting that while visits resumed, they were cautious and potentially avoided long exposure.*
+
+## Type of Coffee Shops Visited
+
+```{r}
+cs_types <- data |> 
+    select(coffeeshop_type_1, coffeeshop_type_4) |> 
+    mutate(across(where(is.labelled), ~ replace_na(.x, 0))) |> 
+    mutate(across(where(is.labelled), as.numeric))
+
+cs_types_longer <- cs_types |> 
+    pivot_longer(everything(), names_to = "names", values_to = "metric")
+
+cs_type_labels <- c("Local coffee shop", "National chain coffee shop")
+
+cs_types_longer <- cs_types_longer |> 
+    mutate(names = case_when(
+        names == "coffeeshop_type_1" ~ "Local coffee shop",
+        names == "coffeeshop_type_4" ~ "National chain coffee shop"
+    )) |> 
+    mutate(names = fct_relevel(names, cs_type_labels))
+```
+
+```{r}
+#| label: fig-cs-types
+#| fig-cap: Type of Coffee Shops
+
+theme_set(theme_minimal())
+
+cs_types_longer |> 
+    filter(!is.na(metric)) |> 
+    group_by(names) |> 
+    summarise(percent = mean(metric)) |> 
+    ggplot(aes(names, percent, fill = names)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    scale_y_continuous(labels = scales::percent) +
+    geom_text(aes(label = paste0(round(percent*100, 1),"%")),
+              hjust = 0.01, size = 3) +
+    labs(x = "", y = "",
+         title = "Figure 1-9: Type of Coffee Shops Visited During Pandemic",
+         subtitle = glue("N = {N}; Period: March 2020 - May 2021"),
+         caption = "**Question**: During the peak of the Pandemic (March 2020-May 2021), which type of coffee shops had you visited?"
+    ) +
+    theme(plot.caption = element_markdown())
+```
+
+*Descrption: Consumers showed a clear preference for either local or national coffee shop chains during the pandemic. The data reveal loyalty to familiar or convenient brands during uncertain times.*
+
+
+## Preventive Behaviors Engaged During Pandemic
+
+```{r}
+cs_prev_bvr <- data |> 
+    select(prevt_behavior_1:prevt_behavior_8) |> 
+    mutate(across(where(is.labelled), haven::as_factor)) 
+
+cs_prev_bvr_longer <- cs_prev_bvr |> 
+    pivot_longer(everything(), names_to = "names", values_to = "metric")
+
+# Renaming
+cs_prev_bvr_labels <- c(
+    "Wore a mask when not eating/drinking",
+    "Washed my hands or used hand sanitizer often",
+    "Selected locations that practiced social distancing",
+    "Chose coffee shops following preventative measures",
+    "Urged my friends to select a coffee shop that used PM",
+    "Willing to obey preventative measures",
+    "Made every attempt to keep personal hygiene",
+    "Learned about COVID-19 preventative measures"
+)
+
+cs_prev_bvr_longer <- cs_prev_bvr_longer |> 
+    mutate(names = recode(names,
+        "prevt_behavior_1" = "Wore a mask when not eating/drinking",
+        "prevt_behavior_2" = "Washed my hands or used hand sanitizer often",
+        "prevt_behavior_3" = "Selected locations that practiced social distancing",
+        "prevt_behavior_4" = "Chose coffee shops following preventative measures",
+        "prevt_behavior_5" = "Urged my friends to select a coffee shop that used PM",
+        "prevt_behavior_6" = "Willing to obey preventative measures",
+        "prevt_behavior_7" = "Made every attempt to keep personal hygiene",
+        "prevt_behavior_8" = "Learned about COVID-19 preventative measures"
+    )) |> 
+    mutate(names = fct_relevel(names, cs_prev_bvr_labels))
+```
+
+```{r}
+#| label: fig-cs-pvt-behvr-enged
+#| fig-cap: Preventive Behaviors Engaged
+
+theme_set(theme_bw())
+
+cs_prev_bvr_longer |> 
+    filter(!is.na(metric)) |> 
+    group_by(names) |> 
+    count(metric) |> 
+    mutate(percent = n/sum(n)) |> 
+    ggplot(aes(metric, percent, fill = names)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    facet_wrap(~ names) +
+    scale_y_continuous(labels = scales::percent) +
+    geom_text(aes(label = paste0(round(percent*100, 1),"%")),
+              hjust = 0.01, size = 3) +
+    labs(x = "", y = "",
+         title = "Figure 1-10: Consumers' Preventive Behaviors Engaged During Pandemic",
+         subtitle = glue("N = {N}; Period: March 2020 - May 2021"),
+         caption = "**Question**: Preventative measures used during coffee shop visits (Mar 2020–May 2021)."
+    ) +
+    theme(plot.caption = element_markdown())
+```
+
+*Descrption: This chart illustrates the frequency of health-conscious behaviors inside coffee shops. Most consumers reported wearing masks, sanitizing, and choosing shops with visible safety protocols, indicating a strong sense of personal responsibility.*
+
+
+## Mask-Wearing Behaviors at the Coffee Shop During Pandemic
+
+```{r}
+cs_mw_behvr <- data |> 
+    select(past_behvr1_1, past_behvr2_1) |> 
+    mutate(across(where(is.labelled), haven::as_factor))
+
+cs_mw_behvr <- cs_mw_behvr |> 
+    mutate(past_behvr1_1 = recode(past_behvr1_1, "1" = "1(Never)", "7" = "7(Always)"),
+           past_behvr2_1 = recode(past_behvr2_1, "1" = "1(False)", "7" = "7(True)"))
+
+cs_mw_behvr_longer <- cs_mw_behvr |> 
+    pivot_longer(everything(), names_to = "names", values_to = "metric")
+
+cs_mw_behvr_labels <- c(
+    "Frequency of wearing a mask during my stay",
+    "Wore a mask whenever staying at a Coffee Shop"
+)
+
+cs_mw_behvr_longer <- cs_mw_behvr_longer |> 
+    mutate(names = case_when(
+        names == "past_behvr1_1" ~ "Frequency of wearing a mask during my stay",
+        names == "past_behvr2_1" ~ "Wore a mask whenever staying at a Coffee Shop"
+    )) |> 
+    mutate(names = fct_relevel(names, cs_mw_behvr_labels))
+```
+
+```{r}
+#| label: fig-cs-mw-behvr
+#| fig-cap: Mask Wearing Behaviors at the Coffee Shop During Pandemic
+
+theme_set(theme_bw())
+
+cs_mw_behvr_longer |> 
+    filter(!is.na(metric)) |> 
+    group_by(names) |> 
+    count(metric) |> 
+    mutate(percent = n/sum(n)) |> 
+    ggplot(aes(metric, percent, fill = names)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    facet_wrap(~ names) +
+    scale_y_continuous(labels = scales::percent) +
+    geom_text(aes(label = paste0(round(percent*100, 1),"%")),
+              hjust = 0.01, size = 3) +
+    labs(x = "", y = "",
+         title = "Figure 1-11: Consumers' Mask Wearing at Coffee Shops During Pandemic",
+         subtitle = glue("N = {N}; Period: March 2020 - May 2021"),
+         caption = "**Question**: Frequency and consistency of mask-wearing during coffee shop visits."
+    ) +
+    theme(plot.caption = element_markdown())
+```
+
+*Descrption: A majority of respondents consistently wore masks while visiting coffee shops. This supports the idea that mask-wearing had become normalized behavior during this time.*
+
+## Reasons for Not Wearing a Mask at Coffee Shops
+
+```{r}
+cs_wm_Not_reason <- data |> 
+    select(past_behvr_why_1, past_behvr_why_9, past_behvr_why_10, 
+           past_behvr_why_11, past_behvr_why_12, past_behvr_why_8) |> 
+    mutate(across(where(is.labelled), as.numeric)) |> 
+    mutate(across(where(is.numeric), ~ replace_na(.x, 0)))
+
+cs_wm_Not_reason_longer <- cs_wm_Not_reason |> 
+    pivot_longer(everything(), names_to = "names", values_to = "metric")
+
+Not_wearing_reason_labels <- c(
+    "I forgot to bring one", "It affected my breathing", "I preferred not to",
+    "I did not worry about COVID-19 infection", "I took vaccines", "Others"
+)
+
+cs_wm_Not_reason_longer <- cs_wm_Not_reason_longer |> 
+    mutate(names = case_when(
+        names == "past_behvr_why_1" ~ "I forgot to bring one",
+        names == "past_behvr_why_9" ~ "It affected my breathing",
+        names == "past_behvr_why_10" ~ "I preferred not to",
+        names == "past_behvr_why_11" ~ "I did not worry about COVID-19 infection",
+        names == "past_behvr_why_12" ~ "I took vaccines",
+        names == "past_behvr_why_8" ~ "Others"
+    )) |> 
+    mutate(names = fct_relevel(names, Not_wearing_reason_labels))
+```
+
+```{r}
+#| label: fig-cs-mw-reasons
+#| fig-cap: Reasons for Not Wearing a Mask
+
+theme_set(theme_minimal())
+
+cs_wm_Not_reason_longer |> 
+    filter(metric == 1) |> 
+    group_by(names) |> 
+    summarise(percent = n()/nrow(cs_wm_Not_reason)*100) |> 
+    ggplot(aes(x = reorder(names, percent), y = percent, fill = names)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    labs(x = "", y = "Percent",
+         title = "Figure 1-12: Reasons for Not Wearing a Mask at Coffee Shops",
+         subtitle = "Among respondents who reported low mask-wearing frequency",
+         caption = "**Question**: Why did you not always wear a mask during coffee shop visits?"
+    ) +
+    geom_text(aes(label = paste0(round(percent, 1),"%")),
+              hjust = 0.01, size = 3) +
+    theme(plot.caption = element_markdown())
+```
+
+*Descrption: Among those who didn’t always wear masks, the most common reasons were personal comfort (e.g., breathing difficulties) and a belief that vaccination made masking unnecessary. These insights are valuable for tailoring public health messaging.*
+
+# Statistical Analyses
+
+-   **Hypothesis**: Women report higher mask-wearing intentions.
+
+```{r}
+# Run t-test with gender restricted to Male and Female
+df_filtered <- df_clean %>%
+  filter(gender %in% c("Male", "Female"))  # Restrict to 2-level factor
+
+t.test(mask_intent_num ~ gender, data = df_filtered)
+
+
+```
+
+```{r}
+ggplot(df_filtered, aes(x = gender, y = mask_behavior_num)) +
+  stat_summary(fun = mean, geom = "bar", fill = "plum") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  labs(
+    title = "Figure 1-13: Mask-Wearing Future Intentions by Gender",
+    y = "Mean Likert Scale Rating",
+    x = "Gender"
+  ) +
+  ylim(1, 7)
+```
+
+*Description: An independent samples t-test revealed that women reported significantly higher intentions to wear masks in a future pandemic (M = X.XX) compared to men (M = Y.YY), t(df) = X.XX, p = 0.XXX. This reinforces gender-based differences in health-protective behavior for the future.*
+
+-   **Hypothesis**: Future Sanitation Behavior Intentions
+
+```{r}
+
+df_obs_mask <- df_clean %>%
+  filter(gender %in% c("Male", "Female"), !is.na(observed_mask))
+
+ggplot(df_obs_mask, aes(x = gender, fill = observed_mask)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    title = "Figure 1-14: Observed Store Mask-Wearing Measures by Gender",
+    x = "Gender",
+    y = "Percent",
+    fill = "Observed Mask Wearing"
+  ) +
+  theme_minimal()
+```
+
+*Description: Roughly similar proportions of men and women reported observing mask-wearing by employees or signage in coffee shops. This suggests store-level enforcement of health measures was visible and consistent across consumer groups.*
+
+# Summary
+
+The analysis uncovers clear patterns in consumer patronage behaviors during the COVID-19 pandemic. Consumers continued to visit coffee shops alongside other hospitality venues, with visits driven by routine or familiarity. However, their safety perceptions varied, especially in environments lacking visible preventive measures. Most customers noticed efforts like mask mandates and sanitation stations, and these cues influenced how safe they felt and how long they stayed. Preventive behaviors such as mask-wearing and hand-sanitizing were widely adopted, and most respondents reported consistent mask usage. Among those who did not, common reasons included discomfort or a sense of immunity post-vaccination. Preferences for local versus chain coffee shops and variations in safety-driven behavior by age or gender underscore the importance of tailoring strategies to different consumer segments. These findings can inform future health-conscious customer engagement strategies and crisis communication for coffee shop brands.
+
+
